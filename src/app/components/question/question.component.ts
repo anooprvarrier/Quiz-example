@@ -1,0 +1,61 @@
+import { Component, ChangeDetectionStrategy, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+
+import { QuizQuestion } from '../../models/QuizQuestion';
+import { QuizService } from 'src/app/services/quiz.service';
+import { TimerService } from 'src/app/services/timer.service';
+
+@Component({
+  selector: 'codelab-quiz-question',
+  templateUrl: './question.component.html',
+  styleUrls: ['./question.component.scss'],
+  providers: []
+})
+export class QuizQuestionComponent implements OnInit, OnChanges {
+  private currentQuestion: QuizQuestion;
+  @Input() set question(value: QuizQuestion) {
+    this.currentQuestion = value;
+  };
+  @Output() answer = new EventEmitter<number>();
+  optionIndex: number;
+  formGroup: FormGroup;
+  matRadio: boolean;
+  correctAnswerMessage: string;
+
+  constructor(private quizService: QuizService,
+    private timerService: TimerService) { }
+
+  ngOnInit() {
+    this.formGroup = new FormGroup({
+      answer: new FormControl([null, Validators.required])
+    });
+    this.matRadio = this.quizService.getQuestionType();
+    this.correctAnswerMessage = this.quizService.correctAnswerMessage;
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.question && changes.question.currentValue && !changes.question.firstChange) {
+      this.currentQuestion = changes.question.currentValue;
+      this.formGroup.patchValue({ answer: '' });
+    }
+  }
+
+  radioChange(answer: number) {
+    this.answer.emit(answer);
+  }
+
+  isCorrect(correct: boolean, optionIndex: number): boolean {
+    return correct === this.currentQuestion.options[optionIndex].correct;
+  }
+
+  isIncorrect(correct: boolean, optionIndex: number): boolean {
+    return correct !== this.currentQuestion.options[optionIndex].correct;
+  }
+
+  setSelected(optionIndex: number): void {
+    this.currentQuestion.options.forEach(o => o.selected = false);
+    this.currentQuestion.options[optionIndex].selected = true;
+    this.quizService.addCorrectIndexesToCorrectAnswerOptionsArray(optionIndex);
+  }
+  
+}
