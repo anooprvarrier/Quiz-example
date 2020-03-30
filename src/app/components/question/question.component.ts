@@ -34,9 +34,11 @@ export class QuizQuestionComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes.question && changes.question.currentValue && !changes.question.firstChange) {
+    if (changes.question && changes.question.currentValue != changes.question.firstChange) {
       this.currentQuestion = changes.question.currentValue;
-      this.formGroup.patchValue({ answer: '' });
+      if (this.formGroup) {
+        this.formGroup.patchValue({ answer: '' });
+      }
     }
   }
 
@@ -54,8 +56,18 @@ export class QuizQuestionComponent implements OnInit, OnChanges {
 
   setSelected(optionIndex: number): void {
     this.currentQuestion.options.forEach(o => o.selected = false);
-    this.currentQuestion.options[optionIndex].selected = true;
-    this.quizService.addCorrectIndexesToCorrectAnswerOptionsArray(optionIndex);
+    this.currentQuestion.options[optionIndex].selected = true;    
+    if (
+      this.currentQuestion &&
+      optionIndex &&
+      this.currentQuestion.options &&
+      this.currentQuestion.options[optionIndex]["correct"] === true
+    ) {
+      this.quizService.correctAnswers = [...this.quizService.correctAnswers, optionIndex + 1];
+
+    } else {
+      console.log('else')
+    }
   }
-  
+
 }

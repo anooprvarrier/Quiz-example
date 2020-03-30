@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, Input, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input, OnInit, SimpleChanges, OnChanges } from '@angular/core';
 
 import { QuizQuestion } from '../../../models/QuizQuestion';
 import { QuizService } from 'src/app/services/quiz.service';
@@ -11,11 +11,13 @@ import { TimerService } from 'src/app/services/timer.service';
   styleUrls: ['./timer.component.scss'],
   providers: []
 })
-export class TimerComponent implements OnInit {
-  @Input() question: QuizQuestion;
-  @Input() answer: number;
+export class TimerComponent implements OnInit, OnChanges {
+  answer;
+  @Input() set selecteAnaswer(value) {
+    this.answer = value;
+  }
   hasAnswer: boolean;
-  
+
   interval;
   timeLeft: number;
   timePerQuestion = 20;
@@ -25,42 +27,46 @@ export class TimerComponent implements OnInit {
 
   constructor(
     private quizService: QuizService,
-    private timerService: TimerService) {}
+    private timerService: TimerService) { }
 
   ngOnInit(): void {
-    this.timeLeft = this.timePerQuestion;
+
+    this.timerService.getLeftTime$.subscribe(data=>{
+      this.timeLeft=data;
+    });
     this.timer();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.selecteAnaswer && changes.selecteAnaswer.currentValue != changes.selecteAnaswer.firstChange) {
+      this.answer = changes.selecteAnaswer.currentValue;
+    }
   }
 
   // countdown clock
   timer() {
-    if (this.quizService.isThereAnotherQuestion()) {
-      this.interval = setInterval(() => {
-        this.quizTimerLogic();
-      }, 1000);
-      clearInterval();
-    }
+    this.interval = setInterval(() => {
+      this.quizTimerLogic();
+    }, 1000);
+    clearInterval();
   }
 
   quizTimerLogic() {
     if (this.timeLeft > 0) {
-      this.timeLeft--;        
+      this.timeLeft--;
       if (this.answer !== null) {
         this.hasAnswer = true;
-        this.quizService.checkIfAnsweredCorrectly();
         this.elapsedTime = Math.ceil(this.timePerQuestion - this.timeLeft);
         this.timerService.addElapsedTimeToElapsedTimes(this.elapsedTime);
         this.timerService.calculateTotalElapsedTime(this.elapsedTimes);
       }
 
       if (this.timeLeft === 0) {
-        // show correct answers in the template
         if (!this.quizService.isFinalQuestion()) {
           this.timerService.quizDelay(3000);
           this.quizService.nextQuestion();
         }
         if (this.quizService.isFinalQuestion() && this.hasAnswer === true) {
-          this.quizService.calculateQuizPercentage();
           this.quizService.navigateToResults();
           this.quizIsOver = true;
         }

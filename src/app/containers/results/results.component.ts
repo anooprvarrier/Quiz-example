@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, Input, OnInit } from '@angular/core
 import { Router } from '@angular/router';
 
 import { QuizQuestion } from '../../models/QuizQuestion';
+import { QuizService } from 'src/app/services/quiz.service';
 
 
 @Component({
@@ -11,15 +12,12 @@ import { QuizQuestion } from '../../models/QuizQuestion';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ResultsComponent implements OnInit {
-  @Input() question: QuizQuestion;
-  @Input() answer: number;
-  allQuestions: QuizQuestion[];
 
-  quizMetadata: {
-    totalQuestions: number;
-    completionTime: number;
-    correctAnswersCount: number;
-    percentage: number;
+  quizMetadata: QuizMetadata = {
+    completionTime: null,
+    correctAnswersCount: null,
+    percentage: null,
+    totalQuestions: null
   };
 
   elapsedMinutes: number;
@@ -30,7 +28,10 @@ export class ResultsComponent implements OnInit {
   NOT_BAD = '../../../assets/images/not-bad.jpg';
   TRY_AGAIN = '../../../assets/images/try-again.jpeg';
 
-  constructor(private router: Router) {
+  constructor(private router: Router,
+    private quizService: QuizService) {
+
+    console.log(this.router.getCurrentNavigation());
     this.quizMetadata.totalQuestions = this.router.getCurrentNavigation().extras.state.totalQuestions;
     this.quizMetadata.completionTime = this.router.getCurrentNavigation().extras.state.completionTime;
     this.quizMetadata.correctAnswersCount = this.router.getCurrentNavigation().extras.state.correctAnswersCount;
@@ -38,7 +39,20 @@ export class ResultsComponent implements OnInit {
   }
 
   ngOnInit() {
+    console.log(this.quizMetadata);
     this.elapsedMinutes = Math.floor(this.quizMetadata.completionTime / 60);
     this.elapsedSeconds = this.quizMetadata.completionTime % 60;
   }
+
+  restart() {
+    this.router.navigate(['/intro']);
+    this.quizService.resetAll();
+  }
 }
+
+export class QuizMetadata {
+  totalQuestions: number;
+  completionTime: number;
+  correctAnswersCount: number;
+  percentage: number;
+};
